@@ -80,7 +80,11 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation(libs.gson)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.coil.compose)
 
+}
 
+tasks.named("preBuild") {
+    dependsOn("openApiGenerate")
 }
 

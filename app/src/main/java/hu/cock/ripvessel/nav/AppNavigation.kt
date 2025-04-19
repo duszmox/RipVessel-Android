@@ -5,8 +5,9 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import hu.cock.ripvessel.home.ListScreen
+import hu.cock.ripvessel.home.HomeScreen
 import hu.cock.ripvessel.login.LoginScreen
+import hu.cock.ripvessel.SessionManager
 
 @Composable
 fun AppNavigation(navController: NavHostController, startDestination: String = "login") {
@@ -18,7 +19,13 @@ fun AppNavigation(navController: NavHostController, startDestination: String = "
             })
         }
         composable("list") {
-            ListScreen()
+            HomeScreen(onLogout = {
+                // Navigate back to the login screen when user logs out
+                navController.navigate("login") {
+                    // Clear the back stack to prevent going back to the home screen
+                    popUpTo("login") { inclusive = true }
+                }
+            })
         }
     }
 }
