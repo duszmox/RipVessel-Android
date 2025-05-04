@@ -39,6 +39,9 @@ class VideoViewModel(
     private val _origin = MutableStateFlow<String?>(null)
     val origin: StateFlow<String?> = _origin.asStateFlow()
 
+    private val _playbackPosition = MutableStateFlow<Long>(0)
+    val playbackPosition: StateFlow<Long> = _playbackPosition.asStateFlow()
+
     init {
         initialize()
     }
@@ -147,5 +150,9 @@ class VideoViewModel(
                 e.printStackTrace()
             }
         }
+    }
+
+    fun updatePlaybackPosition(position: Long) {
+        _playbackPosition.value = position
     }
 } 

@@ -86,15 +86,26 @@ fun VideoScreen(
     val stream by viewModel.stream.collectAsState()
     val currentQuality by viewModel.currentQuality.collectAsState()
     val qualities by viewModel.qualities.collectAsState()
+    val playbackPosition by viewModel.playbackPosition.collectAsState()
 
     var showQualitySelector by remember { mutableStateOf(false) }
     var exoPlayer by remember { mutableStateOf<ExoPlayer?>(null) }
 
     val context = LocalContext.current
 
+    // Single DisposableEffect for player lifecycle
+    DisposableEffect(Unit) {
+        onDispose {
+            exoPlayer?.let { player ->
+                viewModel.updatePlaybackPosition(player.currentPosition)
+                player.release()
+            }
+        }
+    }
+
     LaunchedEffect(currentQuality) {
         currentQuality?.let { quality ->
-            exoPlayer?.release()
+            val oldPlayer = exoPlayer
             // Build and inject auth cookie into HTTP data source
             val sessionValue = SessionManager(context).getAuthCookie() ?: ""
             val httpDataSourceFactory = DefaultHttpDataSource.Factory()
@@ -107,20 +118,18 @@ fun VideoScreen(
             )
 
             // Create player with custom data source and start playback
-            exoPlayer = ExoPlayer.Builder(context)
+            val newPlayer = ExoPlayer.Builder(context)
                 .setMediaSourceFactory(DefaultMediaSourceFactory(dataSourceFactory))
                 .build().apply {
                     val url = if (quality.url.startsWith("/")) viewModel.origin.value + quality.url else quality.url
                     setMediaItem(MediaItem.fromUri(url))
                     prepare()
                     playWhenReady = true
+                    seekTo(playbackPosition)
                 }
-        }
-    }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            exoPlayer?.release()
+            
+            exoPlayer = newPlayer
+            oldPlayer?.release()
         }
     }
 
