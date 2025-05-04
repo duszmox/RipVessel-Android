@@ -19,14 +19,19 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import hu.cock.ripvessel.home.model.VideoListItemModel
+import androidx.compose.foundation.clickable
 
 @Composable
-fun VideoListItem(video: VideoListItemModel) {
+fun VideoListItem(
+    video: VideoListItemModel,
+    onClick: () -> Unit
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp, horizontal = 12.dp),
-        ) {
+            .padding(vertical = 8.dp, horizontal = 12.dp)
+            .clickable(onClick = onClick),
+    ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Box(modifier = Modifier.fillMaxWidth()) {
                 AsyncImage(

@@ -1,6 +1,7 @@
 package hu.cock.ripvessel.home.model
 
 data class VideoListItemModel(
+    val postId: String,
     val videoId: String,
     val title: String,
     val description: String,

@@ -1,5 +1,6 @@
 package hu.cock.ripvessel.home
 
+import android.content.Intent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -27,6 +28,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import hu.cock.ripvessel.home.repository.HomeRepository
 import hu.cock.ripvessel.ui.theme.RIPVesselTheme
+import hu.cock.ripvessel.video.VideoActivity
 
 @Composable
 fun HomeScreen(onLogout: () -> Unit) {
@@ -67,7 +69,15 @@ fun HomeScreen(onLogout: () -> Unit) {
                 }
             }
             itemsIndexed(videoItems) { _, video ->
-                VideoListItem(video)
+                VideoListItem(
+                    video = video,
+                    onClick = {
+                        val intent = Intent(context, VideoActivity::class.java).apply {
+                            putExtra("post_id", video.postId)
+                        }
+                        context.startActivity(intent)
+                    }
+                )
             }
             if (isLoading) {
                 item {

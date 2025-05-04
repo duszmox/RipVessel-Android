@@ -75,6 +75,7 @@ class HomeRepository(private val context: Context) {
                         Log.d("HomeRepository", "Loaded video: ${video.id} (${video.title})")
                         VideoListItemModel(
                             videoId = video.id,
+                            postId = post.id,
                             title = video.title,
                             description = description,
                             thumbnailUrl = post.thumbnail?.path.toString(),

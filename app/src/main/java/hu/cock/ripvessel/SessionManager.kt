@@ -39,6 +39,13 @@ class SessionManager(context: Context) {
         editor.putString("auth_cookie", cookie)
         editor.apply()
     }
+    fun saveCFUVIDCookie(cookie: String) {
+        editor.putString("cfuvid", cookie)
+        editor.apply()
+    }
 
     fun getAuthCookie(): String? = prefs.getString("auth_cookie", null)
+
+    fun getCFUVIDCookie(): String? = prefs.getString("cfuvid", null)
+
 }

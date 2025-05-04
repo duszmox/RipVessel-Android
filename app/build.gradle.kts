@@ -83,7 +83,12 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.coil.compose)
     implementation(libs.moshi)
-
+    implementation(libs.androidx.material.icons.extended)
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.ui)
+    implementation(libs.androidx.media3.common)
+    implementation(libs.androidx.media3.hls)
+    implementation(libs.androidx.media3.datasource)
 }
 
 tasks.named("preBuild") {
