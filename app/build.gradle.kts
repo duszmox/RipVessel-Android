@@ -12,8 +12,8 @@ openApiGenerate {
     outputDir = "$projectDir/build"
     apiPackage = "hu.gyulakiri.ripvessel.api"
     modelPackage = "hu.gyulakiri.ripvessel.model"
-    configOptions.put("serializableModel","false")
-    configOptions.put("serializationLibrary","gson")
+    configOptions.put("serializableModel","true")
+    configOptions.put("serializationLibrary","moshi")
     generateApiTests.set(false)
     generateApiDocumentation.set(false)
 }
@@ -72,6 +72,7 @@ dependencies {
     implementation(libs.androidx.material3)
     testImplementation(libs.junit)
     implementation(libs.okhttp)
+    implementation(libs.logging.interceptor)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
@@ -81,6 +82,7 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.coil.compose)
+    implementation(libs.moshi)
 
 }
 

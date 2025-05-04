@@ -6,26 +6,27 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import hu.cock.ripvessel.ui.theme.RIPVesselTheme
-import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import hu.cock.ripvessel.home.repository.HomeRepository
-import androidx.compose.foundation.lazy.rememberLazyListState
+import hu.cock.ripvessel.ui.theme.RIPVesselTheme
 
 @Composable
 fun HomeScreen(onLogout: () -> Unit) {
@@ -38,6 +39,19 @@ fun HomeScreen(onLogout: () -> Unit) {
     val videoItems by viewModel.videoItems.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val listState = rememberLazyListState()
+
+    // Infinite scroll: load more when near the end
+    LaunchedEffect(listState) {
+        snapshotFlow {
+            listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
+        }.collect { lastVisibleIndex ->
+            if (lastVisibleIndex != null && 
+                lastVisibleIndex >= videoItems.size - 3 && 
+                !isLoading) {
+                viewModel.loadMoreVideos()
+            }
+        }
+    }
 
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         LazyColumn(
@@ -55,22 +69,15 @@ fun HomeScreen(onLogout: () -> Unit) {
             itemsIndexed(videoItems) { _, video ->
                 VideoListItem(video)
             }
-            item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Button(
-                        onClick = { viewModel.loadMoreVideos() },
-                        enabled = !isLoading
+            if (isLoading) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        if (isLoading) {
-                            CircularProgressIndicator(modifier = Modifier.size(20.dp))
-                        } else {
-                            Text("Load More Videos")
-                        }
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp))
                     }
                 }
             }

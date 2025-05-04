@@ -20116,7 +20116,7 @@
 						},
 						"required": false,
 						"description": "For pagination, this is used to determine which posts to skip. There should be one `fetchAfter` object for each creator in `ids`. The `moreFetchable` in the request, and all of the data, comes from the `ContentCreatorListV3Response`.",
-						"style": "form",
+						"style": "deepObject",
 						"explode": true
 					}
 				],
