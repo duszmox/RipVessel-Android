@@ -1,6 +1,8 @@
 package hu.cock.ripvessel.video
 
 import android.os.Bundle
+import android.app.PictureInPictureParams
+import android.util.Rational
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -19,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ThumbDown
 import androidx.compose.material.icons.filled.ThumbUp
+import androidx.compose.material.icons.filled.PictureInPicture
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,6 +36,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,6 +48,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
@@ -67,15 +72,56 @@ class VideoActivity : ComponentActivity() {
         }
     }
 
+    private var videoWidth: Int = 0
+    private var videoHeight: Int = 0
+    private var inPictureInPictureMode = mutableStateOf(false)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             RIPVesselTheme {
                 VideoScreen(
                     viewModel = viewModel,
-                    onBackPressed = { finish() }
+                    onBackPressed = { finish() },
+                    onEnterPip = { aspectRatio -> 
+                        val params = PictureInPictureParams.Builder()
+                            .setAspectRatio(aspectRatio)
+                            .build()
+                        enterPictureInPictureMode(params)
+                    },
+                    onVideoSizeChanged = { width, height ->
+                        videoWidth = width
+                        videoHeight = height
+                    },
+                    isInPictureInPictureMode = inPictureInPictureMode.value
                 )
             }
+        }
+    }
+
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        val params = PictureInPictureParams.Builder()
+            .setAspectRatio(
+                if (videoWidth > 0 && videoHeight > 0) {
+                    Rational(videoWidth, videoHeight)
+                } else {
+                    Rational(16, 9)
+                }
+            )
+            .build()
+        enterPictureInPictureMode(params)
+    }
+
+    override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode)
+        inPictureInPictureMode.value = isInPictureInPictureMode
+        if (isInPictureInPictureMode) {
+            // Hide system UI when entering PiP mode
+            window.decorView.systemUiVisibility = android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+        } else {
+            // Stop playback when exiting PiP mode
+           finish()
         }
     }
 }
@@ -85,7 +131,10 @@ class VideoActivity : ComponentActivity() {
 @Composable
 fun VideoScreen(
     viewModel: VideoViewModel,
-    onBackPressed: () -> Unit
+    onBackPressed: () -> Unit,
+    onEnterPip: (Rational) -> Unit,
+    onVideoSizeChanged: (width: Int, height: Int) -> Unit,
+    isInPictureInPictureMode: Boolean
 ) {
     val post by viewModel.post.collectAsState()
     val video by viewModel.video.collectAsState()
@@ -96,6 +145,8 @@ fun VideoScreen(
 
     var showQualitySelector by remember { mutableStateOf(false) }
     var exoPlayer by remember { mutableStateOf<ExoPlayer?>(null) }
+    var videoWidth by remember { mutableStateOf(0) }
+    var videoHeight by remember { mutableStateOf(0) }
 
     val context = LocalContext.current
 
@@ -128,6 +179,13 @@ fun VideoScreen(
             // Create player with custom data source and start playback
             val newPlayer = ExoPlayer.Builder(context)
                 .setMediaSourceFactory(DefaultMediaSourceFactory(dataSourceFactory))
+                .setAudioAttributes(
+                    androidx.media3.common.AudioAttributes.Builder()
+                        .setUsage(C.USAGE_MEDIA)
+                        .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
+                        .build(),
+                    true // Handle audio focus
+                )
                 .build().apply {
                     val url =
                         if (quality.url.startsWith("/")) viewModel.origin.value + quality.url else quality.url
@@ -135,6 +193,15 @@ fun VideoScreen(
                     prepare()
                     playWhenReady = true
                     seekTo(playbackPosition)
+                    
+                    // Listen for video size changes
+                    addListener(object : androidx.media3.common.Player.Listener {
+                        override fun onVideoSizeChanged(videoSize: androidx.media3.common.VideoSize) {
+                            videoWidth = videoSize.width
+                            videoHeight = videoSize.height
+                            onVideoSizeChanged(videoSize.width, videoSize.height)
+                        }
+                    })
                 }
             
             exoPlayer = newPlayer
@@ -144,14 +211,39 @@ fun VideoScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(post?.title ?: "") },
-                navigationIcon = {
-                    IconButton(onClick = onBackPressed) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+            if (!isInPictureInPictureMode) {
+                TopAppBar(
+                    title = { 
+                        Text(
+                            text = post?.title ?: "",
+                            maxLines = 2,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        ) 
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBackPressed) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    },
+                    actions = {
+                        IconButton(
+                            onClick = { 
+                                if (videoWidth > 0 && videoHeight > 0) {
+                                    onEnterPip(Rational(videoWidth, videoHeight))
+                                } else {
+                                    // Fallback to 16:9 if video dimensions are not yet available
+                                    onEnterPip(Rational(16, 9))
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PictureInPicture,
+                                contentDescription = "Enter Picture-in-Picture"
+                            )
+                        }
                     }
-                }
-            )
+                )
+            }
         }
     ) { padding ->
         Column(

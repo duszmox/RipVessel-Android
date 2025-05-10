@@ -27,6 +27,8 @@
             android:name=".video.VideoActivity"
             android:exported="false"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
+            android:supportsPictureInPicture="true"
+            android:launchMode="singleTop"
             android:theme="@style/Theme.RIPVessel" />
     </application>
 

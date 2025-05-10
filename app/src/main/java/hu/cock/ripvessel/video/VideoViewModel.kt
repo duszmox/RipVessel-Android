@@ -136,7 +136,7 @@ class VideoViewModel(
                     }
 
                     val newInteraction: List<ContentPostV3Response.UserInteraction> = List(interaction.size) {
-                        if (interaction[it] == "LIKE") ContentPostV3Response.UserInteraction.like else ContentPostV3Response.UserInteraction.dislike
+                        if (interaction[it] == "like") ContentPostV3Response.UserInteraction.like else ContentPostV3Response.UserInteraction.dislike
                     }
 
                     // Update post with new interaction
