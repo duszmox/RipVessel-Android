@@ -89,6 +89,13 @@ dependencies {
     implementation(libs.androidx.media3.common)
     implementation(libs.androidx.media3.hls)
     implementation(libs.androidx.media3.datasource)
+
+    implementation(libs.ui)
+    implementation(libs.androidx.material)
+    implementation(libs.ui.tooling.preview)
+    implementation(libs.androidx.runtime.livedata)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.foundation)
 }
 
 tasks.named("preBuild") {

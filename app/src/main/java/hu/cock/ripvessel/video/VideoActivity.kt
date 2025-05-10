@@ -1,7 +1,6 @@
 package hu.cock.ripvessel.video
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -13,6 +12,9 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.LocalContentAlpha
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ThumbDown
@@ -22,6 +24,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -39,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
@@ -48,6 +52,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.PlayerView
 import hu.cock.ripvessel.SessionManager
+import hu.cock.ripvessel.ui.components.HtmlText
 import hu.cock.ripvessel.ui.theme.RIPVesselTheme
 import hu.gyulakiri.ripvessel.model.ContentPostV3Response
 
@@ -55,7 +60,8 @@ class VideoActivity : ComponentActivity() {
     private val viewModel: VideoViewModel by viewModels {
         object : androidx.lifecycle.ViewModelProvider.Factory {
             override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                val postId = intent.getStringExtra("post_id") ?: throw IllegalArgumentException("post_id is required")
+                val postId = intent.getStringExtra("post_id")
+                    ?: throw IllegalArgumentException("post_id is required")
                 return VideoViewModel(application, postId) as T
             }
         }
@@ -109,9 +115,11 @@ fun VideoScreen(
             // Build and inject auth cookie into HTTP data source
             val sessionValue = SessionManager(context).getAuthCookie() ?: ""
             val httpDataSourceFactory = DefaultHttpDataSource.Factory()
-                .setDefaultRequestProperties(mutableMapOf(
-                    "Cookie" to sessionValue
-                ))
+                .setDefaultRequestProperties(
+                    mutableMapOf(
+                        "Cookie" to sessionValue
+                    )
+                )
             val dataSourceFactory = DefaultDataSource.Factory(
                 context,
                 httpDataSourceFactory
@@ -121,7 +129,8 @@ fun VideoScreen(
             val newPlayer = ExoPlayer.Builder(context)
                 .setMediaSourceFactory(DefaultMediaSourceFactory(dataSourceFactory))
                 .build().apply {
-                    val url = if (quality.url.startsWith("/")) viewModel.origin.value + quality.url else quality.url
+                    val url =
+                        if (quality.url.startsWith("/")) viewModel.origin.value + quality.url else quality.url
                     setMediaItem(MediaItem.fromUri(url))
                     prepare()
                     playWhenReady = true
@@ -151,9 +160,10 @@ fun VideoScreen(
                 .padding(padding)
         ) {
             // Video Player
-            Box(modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(16f / 9f)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(16f / 9f)
             ) {
                 exoPlayer?.let { player ->
                     AndroidView(
@@ -207,11 +217,18 @@ fun VideoScreen(
             }
 
             // Video Description
-            Text(
-                text = post?.text ?: "",
-                modifier = Modifier.padding(16.dp),
-                style = MaterialTheme.typography.bodyLarge
-            )
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                HtmlText(
+                    html = post?.text ?: "",
+                    textColor = LocalContentColor.current
+                        .copy(alpha = LocalContentAlpha.current),
+                    fontSize = 16.sp,
+                )
+            }
         }
 
         // Quality Selection Dialog
