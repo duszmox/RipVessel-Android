@@ -124,7 +124,8 @@ class VideoViewModel(
                     val client = createAuthenticatedClient(appContext)
                     val contentApi = ContentV3Api(client = client)
                     val post = _post.value ?: return@withContext
-
+                    val alreadyLiked = post.userInteraction?.contains(ContentPostV3Response.UserInteraction.like)
+                    val alreadyDisliked = post.userInteraction?.contains(ContentPostV3Response.UserInteraction.dislike)
                     val request = ContentLikeV3Request(
                         contentType = ContentLikeV3Request.ContentType.blogPost,
                         id = post.id
@@ -139,11 +140,20 @@ class VideoViewModel(
                         if (interaction[it] == "like") ContentPostV3Response.UserInteraction.like else ContentPostV3Response.UserInteraction.dislike
                     }
 
+                    var newLikes = if (action == ContentPostV3Response.UserInteraction.like) post.likes + (if (alreadyLiked == true) -1 else 1) else post.likes
+                    var newDisLikes = if (action == ContentPostV3Response.UserInteraction.dislike) post.dislikes + (if (alreadyDisliked == true) -1 else 1) else post.dislikes
+
+                    // Handle changing likes and dislikes
+                    if (alreadyLiked == true && action == ContentPostV3Response.UserInteraction.dislike) {
+                        newLikes--
+                    } else if (alreadyDisliked == true && action == ContentPostV3Response.UserInteraction.like) {
+                        newDisLikes--
+                    }
                     // Update post with new interaction
                     _post.value = _post.value?.copy(
                         userInteraction = newInteraction,
-                        likes = if (action == ContentPostV3Response.UserInteraction.like) post.likes + 1 else post.likes,
-                        dislikes = if (action == ContentPostV3Response.UserInteraction.dislike) post.dislikes + 1 else post.dislikes
+                        likes = newLikes,
+                        dislikes = newDisLikes
                     )
                 }
             } catch (e: Exception) {
