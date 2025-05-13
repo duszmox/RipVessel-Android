@@ -1,6 +1,7 @@
 package hu.cock.ripvessel.video
 
 import android.app.PictureInPictureParams
+import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.os.Bundle
 import android.util.Rational
@@ -25,19 +26,28 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.ui.PlayerView
 import hu.cock.ripvessel.SessionManager
 import hu.cock.ripvessel.ui.theme.RIPVesselTheme
 import hu.cock.ripvessel.video.components.QualitySelectionDialog
@@ -47,22 +57,37 @@ import hu.cock.ripvessel.video.components.VideoPlayer
 
 class VideoActivity : ComponentActivity() {
     private val viewModel: VideoViewModel by viewModels {
-        object : androidx.lifecycle.ViewModelProvider.Factory {
-            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+        object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 val postId = intent.getStringExtra("post_id")
                     ?: throw IllegalArgumentException("post_id is required")
+                @Suppress("UNCHECKED_CAST")
                 return VideoViewModel(application, postId) as T
             }
         }
     }
 
-    private var videoWidth: Int = 0
-    private var videoHeight: Int = 0
-    private var inPictureInPictureMode = mutableStateOf(false)
+    private var videoWidth = 0
+    private var videoHeight = 0
+    private var inPipMode by mutableStateOf(false)
+    private var isFullScreen by mutableStateOf(false)
+    private var suppressConfigChangeExit = false
 
     @androidx.annotation.OptIn(UnstableApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Allow both landscape orientations
+        // requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+
+        // Check initial orientation and set fullscreen state
+        isFullScreen = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        if (isFullScreen) {
+            WindowCompat.setDecorFitsSystemWindows(window, false)
+            WindowInsetsControllerCompat(window, window.decorView)
+                .hide(WindowInsetsCompat.Type.systemBars())
+        }
+
         setContent {
             RIPVesselTheme {
                 VideoScreen(
@@ -74,28 +99,68 @@ class VideoActivity : ComponentActivity() {
                             .build()
                         enterPictureInPictureMode(params)
                     },
-                    onVideoSizeChanged = { width, height ->
-                        videoWidth = width
-                        videoHeight = height
+                    onVideoSizeChanged = { w, h ->
+                        videoWidth = w; videoHeight = h
                     },
-                    isInPictureInPictureMode = inPictureInPictureMode.value
+                    isInPictureInPictureMode = inPipMode,
+                    isFullScreen = isFullScreen,
+                    onFullScreenChange = { fs ->
+                        if (fs) {
+                            suppressConfigChangeExit = true
+                            isFullScreen = true
+                            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                            WindowCompat.setDecorFitsSystemWindows(window, false)
+                            WindowInsetsControllerCompat(window, window.decorView)
+                                .hide(WindowInsetsCompat.Type.systemBars())
+                        } else {
+                            isFullScreen = false
+                            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                            WindowCompat.setDecorFitsSystemWindows(window, true)
+                            WindowInsetsControllerCompat(window, window.decorView)
+                                .show(WindowInsetsCompat.Type.systemBars())
+                        }
+                    }
                 )
             }
         }
     }
 
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // Ignore the config change triggered by our own landscape request
+        if (suppressConfigChangeExit) {
+            suppressConfigChangeExit = false
+            return
+        }
+
+        // Enter fullscreen when rotating to either landscape orientation
+        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE && !isFullScreen) {
+            isFullScreen = true
+            WindowCompat.setDecorFitsSystemWindows(window, false)
+            WindowInsetsControllerCompat(window, window.decorView)
+                .hide(WindowInsetsCompat.Type.systemBars())
+        }
+        // Exit fullscreen when rotating to portrait
+        else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT && isFullScreen) {
+            isFullScreen = false
+            WindowCompat.setDecorFitsSystemWindows(window, true)
+            WindowInsetsControllerCompat(window, window.decorView)
+                .show(WindowInsetsCompat.Type.systemBars())
+        }
+    }
+
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
-        val params = PictureInPictureParams.Builder()
-            .setAspectRatio(
-                if (videoWidth > 0 && videoHeight > 0) {
-                    Rational(videoWidth, videoHeight)
-                } else {
-                    Rational(16, 9)
-                }
-            )
-            .build()
-        enterPictureInPictureMode(params)
+        val ratio = if (videoWidth > 0 && videoHeight > 0)
+            Rational(videoWidth, videoHeight)
+        else
+            Rational(16, 9)
+
+        enterPictureInPictureMode(
+            PictureInPictureParams.Builder()
+                .setAspectRatio(ratio)
+                .build()
+        )
     }
 
     override fun onPictureInPictureModeChanged(
@@ -103,16 +168,18 @@ class VideoActivity : ComponentActivity() {
         newConfig: Configuration
     ) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
-        inPictureInPictureMode.value = isInPictureInPictureMode
+        inPipMode = isInPictureInPictureMode
+
         if (isInPictureInPictureMode) {
-            // Hide system UI when entering PiP mode
-            window.decorView.systemUiVisibility = android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+            WindowCompat.setDecorFitsSystemWindows(window, false)
+            WindowInsetsControllerCompat(window, window.decorView)
+                .hide(WindowInsetsCompat.Type.systemBars())
         } else {
-            // Stop playback when exiting PiP mode
             finish()
         }
     }
 }
+
 
 @UnstableApi
 @OptIn(ExperimentalMaterial3Api::class)
@@ -122,21 +189,29 @@ fun VideoScreen(
     onBackPressed: () -> Unit,
     onEnterPip: (Rational) -> Unit,
     onVideoSizeChanged: (width: Int, height: Int) -> Unit,
-    isInPictureInPictureMode: Boolean
+    isInPictureInPictureMode: Boolean,
+    isFullScreen: Boolean,
+    onFullScreenChange: (Boolean) -> Unit
 ) {
     val post by viewModel.post.collectAsState()
-    val video by viewModel.video.collectAsState()
-    val stream by viewModel.stream.collectAsState()
     val currentQuality by viewModel.currentQuality.collectAsState()
     val qualities by viewModel.qualities.collectAsState()
     val playbackPosition by viewModel.playbackPosition.collectAsState()
 
     var showQualitySelector by remember { mutableStateOf(false) }
     var exoPlayer by remember { mutableStateOf<ExoPlayer?>(null) }
-    var videoWidth by remember { mutableStateOf(0) }
-    var videoHeight by remember { mutableStateOf(0) }
+    var videoWidth by remember { mutableIntStateOf(0) }
+    var videoHeight by remember { mutableIntStateOf(0) }
+    var playerView by remember { mutableStateOf<PlayerView?>(null) }
 
     val context = LocalContext.current
+
+    // Update fullscreen button state when isFullScreen changes
+    LaunchedEffect(isFullScreen) {
+        playerView?.setFullscreenButtonClickListener { enterFullScreen ->
+            onFullScreenChange(enterFullScreen)
+        }
+    }
 
     // Single DisposableEffect for player lifecycle
     DisposableEffect(Unit) {
@@ -168,7 +243,7 @@ fun VideoScreen(
             val newPlayer = ExoPlayer.Builder(context)
                 .setMediaSourceFactory(DefaultMediaSourceFactory(dataSourceFactory))
                 .setAudioAttributes(
-                    androidx.media3.common.AudioAttributes.Builder()
+                    AudioAttributes.Builder()
                         .setUsage(C.USAGE_MEDIA)
                         .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
                         .build(),
@@ -183,7 +258,7 @@ fun VideoScreen(
                     seekTo(playbackPosition)
 
                     // Listen for video size changes
-                    addListener(object : androidx.media3.common.Player.Listener {
+                    addListener(object : Player.Listener {
                         override fun onVideoSizeChanged(videoSize: androidx.media3.common.VideoSize) {
                             videoWidth = videoSize.width
                             videoHeight = videoSize.height
@@ -199,7 +274,7 @@ fun VideoScreen(
 
     Scaffold(
         topBar = {
-            if (!isInPictureInPictureMode) {
+            if (!isInPictureInPictureMode && !isFullScreen) {
                 TopAppBar(
                     title = {
                         Text(
@@ -241,21 +316,26 @@ fun VideoScreen(
         ) {
             VideoPlayer(
                 exoPlayer = exoPlayer,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                isFullScreen = isFullScreen,
+                onFullScreenChange = onFullScreenChange,
+                onPlayerViewReady = { view -> playerView = view }
             )
 
-            VideoControls(
-                currentQuality = currentQuality,
-                post = post,
-                onQualityClick = { showQualitySelector = true },
-                onLike = { viewModel.like() },
-                onDislike = { viewModel.dislike() }
-            )
+            if (!isFullScreen) {
+                VideoControls(
+                    currentQuality = currentQuality,
+                    post = post,
+                    onQualityClick = { showQualitySelector = true },
+                    onLike = { viewModel.like() },
+                    onDislike = { viewModel.dislike() }
+                )
 
-            VideoDescription(
-                text = post?.text,
-                modifier = Modifier.weight(1f)
-            )
+                VideoDescription(
+                    text = post?.text,
+                    modifier = Modifier.weight(1f)
+                )
+            }
         }
 
         if (showQualitySelector) {
