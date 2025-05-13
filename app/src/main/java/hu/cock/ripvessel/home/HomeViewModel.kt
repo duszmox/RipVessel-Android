@@ -27,7 +27,22 @@ class HomeViewModel(
         _isLoading.value = true
         viewModelScope.launch {
             val initial = repository.getInitialVideos()
-            _videoItems.value = initial
+            val newVideos = initial.map { content ->
+                VideoListItemModel(
+                    postId = content.postId,
+                    videoId = content.videoId ?: "",
+                    title = content.title,
+                    description = content.description ?: "",
+                    thumbnailUrl = content.thumbnailUrl,
+                    creatorId = content.creatorId,
+                    creatorName = content.creatorName,
+                    creatorProfileUrl = content.creatorProfileUrl,
+                    releaseDate = content.releaseDate,
+                    duration = content.duration ?: "0:00",
+                    channelId = content.channelId
+                )
+            }
+            _videoItems.value = newVideos
             _isLoading.value = false
         }
     }
@@ -37,7 +52,22 @@ class HomeViewModel(
         _isLoading.value = true
         viewModelScope.launch {
             val more = repository.loadMoreVideos()
-            _videoItems.value = _videoItems.value + more
+            val newVideos = _videoItems.value + more.map { content ->
+                VideoListItemModel(
+                    postId = content.postId,
+                    videoId = content.videoId ?: "",
+                    title = content.title,
+                    description = content.description ?: "",
+                    thumbnailUrl = content.thumbnailUrl,
+                    creatorId = content.creatorId,
+                    creatorName = content.creatorName,
+                    creatorProfileUrl = content.creatorProfileUrl,
+                    releaseDate = content.releaseDate,
+                    duration = content.duration ?: "0:00",
+                    channelId = content.channelId
+                )
+            }
+            _videoItems.value = newVideos
             _isLoading.value = false
         }
     }

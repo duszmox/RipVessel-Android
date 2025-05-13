@@ -31,7 +31,10 @@ import hu.cock.ripvessel.ui.theme.RIPVesselTheme
 import hu.cock.ripvessel.video.VideoActivity
 
 @Composable
-fun HomeScreen(onLogout: () -> Unit) {
+fun HomeScreen(
+    onLogout: () -> Unit,
+    onNavigateToCreator: (String, String?) -> Unit
+) {
     val context = LocalContext.current
     val viewModel: HomeViewModel = viewModel(factory = object : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -76,6 +79,9 @@ fun HomeScreen(onLogout: () -> Unit) {
                             putExtra("post_id", video.postId)
                         }
                         context.startActivity(intent)
+                    },
+                    onCreatorClick = {
+                        onNavigateToCreator(video.creatorId, video.channelId)
                     }
                 )
             }
@@ -99,6 +105,11 @@ fun HomeScreen(onLogout: () -> Unit) {
 @Composable
 fun HomeScreenPreview() {
     RIPVesselTheme {
-        HomeScreen(onLogout = {})
+        HomeScreen(
+            onLogout = {},
+            onNavigateToCreator = { _, _ ->
+
+            }
+        )
     }
 }

@@ -24,7 +24,8 @@ import androidx.compose.foundation.clickable
 @Composable
 fun VideoListItem(
     video: VideoListItemModel,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onCreatorClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -65,13 +66,14 @@ fun VideoListItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Creator avatar (profile picture or placeholder)
-                if (video.creatorProfileUrl != null && video.creatorProfileUrl.isNotBlank()) {
+                if (!video.creatorProfileUrl.isNullOrBlank()) {
                     AsyncImage(
                         model = video.creatorProfileUrl,
                         contentDescription = "Creator profile picture",
                         modifier = Modifier
                             .size(40.dp)
-                            .clip(CircleShape),
+                            .clip(CircleShape)
+                            .clickable(onClick = onCreatorClick),
                         contentScale = ContentScale.Crop
                     )
                 } else {
@@ -79,7 +81,8 @@ fun VideoListItem(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape)
-                            .background(Color.Gray),
+                            .background(Color.Gray)
+                            .clickable(onClick = onCreatorClick),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -104,7 +107,8 @@ fun VideoListItem(
                             style = MaterialTheme.typography.bodyMedium,
                             color = Color.Gray,
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.clickable(onClick = onCreatorClick)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(

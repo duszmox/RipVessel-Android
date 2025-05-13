@@ -82,7 +82,9 @@ class HomeRepository(private val context: Context) {
                             creatorName = creatorName,
                             creatorProfileUrl = creatorProfileUrl,
                             releaseDate = releaseDate,
-                            duration = durationFormatted
+                            duration = durationFormatted,
+                            creatorId = post.creator.id,
+                            channelId = post.channel.id
                         )
                     } catch (e: Exception) {
                         Log.e("HomeRepository", "Error loading video $videoId: ${e.message}", e)

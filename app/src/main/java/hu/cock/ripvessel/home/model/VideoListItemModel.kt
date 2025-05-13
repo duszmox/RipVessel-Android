@@ -6,6 +6,8 @@ data class VideoListItemModel(
     val title: String,
     val description: String,
     val thumbnailUrl: String?,
+    val creatorId: String,
+    val channelId: String,
     val creatorName: String,
     val creatorProfileUrl: String?,
     val releaseDate: String,
