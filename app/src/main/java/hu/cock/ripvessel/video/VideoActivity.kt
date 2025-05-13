@@ -7,34 +7,18 @@ import android.util.Rational
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredWidth
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.LocalContentAlpha
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.PictureInPicture
-import androidx.compose.material.icons.filled.ThumbDown
-import androidx.compose.material.icons.filled.ThumbUp
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -44,13 +28,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
@@ -58,12 +38,12 @@ import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
-import androidx.media3.ui.PlayerView
 import hu.cock.ripvessel.SessionManager
-import hu.cock.ripvessel.ui.components.HtmlText
-import hu.cock.ripvessel.ui.components.ReactionButton
 import hu.cock.ripvessel.ui.theme.RIPVesselTheme
-import hu.gyulakiri.ripvessel.model.ContentPostV3Response
+import hu.cock.ripvessel.video.components.QualitySelectionDialog
+import hu.cock.ripvessel.video.components.VideoControls
+import hu.cock.ripvessel.video.components.VideoDescription
+import hu.cock.ripvessel.video.components.VideoPlayer
 
 class VideoActivity : ComponentActivity() {
     private val viewModel: VideoViewModel by viewModels {
@@ -80,6 +60,7 @@ class VideoActivity : ComponentActivity() {
     private var videoHeight: Int = 0
     private var inPictureInPictureMode = mutableStateOf(false)
 
+    @androidx.annotation.OptIn(UnstableApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -133,7 +114,7 @@ class VideoActivity : ComponentActivity() {
     }
 }
 
-@androidx.annotation.OptIn(UnstableApi::class)
+@UnstableApi
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VideoScreen(
@@ -224,7 +205,7 @@ fun VideoScreen(
                         Text(
                             text = post?.title ?: "",
                             maxLines = 2,
-                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis
                         )
                     },
                     navigationIcon = {
@@ -258,99 +239,30 @@ fun VideoScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Video Player
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(16f / 9f)
-            ) {
-                exoPlayer?.let { player ->
-                    AndroidView(
-                        factory = { context ->
-                            PlayerView(context).apply {
-                                this.player = player
-                                useController = true
-                            }
-                        },
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-            }
+            VideoPlayer(
+                exoPlayer = exoPlayer,
+                modifier = Modifier.fillMaxWidth()
+            )
 
-            // Video Controls
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Quality Selector
-                Button(onClick = { showQualitySelector = true }) {
-                    Text(currentQuality?.label ?: "Select Quality")
-                }
+            VideoControls(
+                currentQuality = currentQuality,
+                post = post,
+                onQualityClick = { showQualitySelector = true },
+                onLike = { viewModel.like() },
+                onDislike = { viewModel.dislike() }
+            )
 
-                // Like/Dislike Buttons
-                Row {
-                    ReactionButton(
-                        icon = Icons.Default.ThumbUp,
-                        count = post?.likes,
-                        isSelected = post?.userInteraction?.contains(ContentPostV3Response.UserInteraction.like) == true,
-                        contentDescription = "Like",
-                        onClick = { viewModel.like() },
-                        modifier = Modifier.width(60.dp)
-                    )
-                    ReactionButton(
-                        icon = Icons.Default.ThumbDown,
-                        count = post?.dislikes,
-                        isSelected = post?.userInteraction?.contains(ContentPostV3Response.UserInteraction.dislike) == true,
-                        contentDescription = "Dislike",
-                        onClick = { viewModel.dislike() },
-                        modifier = Modifier.width(60.dp)
-                    )
-                }
-            }
-
-            // Video Description
-            Column(
-                modifier = Modifier
-                    .padding(horizontal = 16.dp)
-                    .verticalScroll(rememberScrollState())
-            ) {
-                HtmlText(
-                    html = post?.text ?: "",
-                    textColor = LocalContentColor.current
-                        .copy(alpha = LocalContentAlpha.current),
-                    fontSize = 16.sp,
-                )
-            }
+            VideoDescription(
+                text = post?.text,
+                modifier = Modifier.weight(1f)
+            )
         }
 
-        // Quality Selection Dialog
         if (showQualitySelector) {
-            AlertDialog(
-                onDismissRequest = { showQualitySelector = false },
-                title = { Text("Select Quality") },
-                text = {
-                    Column {
-                        qualities.forEach { quality ->
-                            TextButton(
-                                onClick = {
-                                    viewModel.setQuality(quality)
-                                    showQualitySelector = false
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text(quality.label)
-                            }
-                        }
-                    }
-                },
-                confirmButton = {
-                    TextButton(onClick = { showQualitySelector = false }) {
-                        Text("Cancel")
-                    }
-                }
+            QualitySelectionDialog(
+                qualities = qualities,
+                onQualitySelected = { viewModel.setQuality(it) },
+                onDismiss = { showQualitySelector = false }
             )
         }
     }
