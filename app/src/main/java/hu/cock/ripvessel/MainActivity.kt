@@ -14,7 +14,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         val sessionManager = SessionManager(applicationContext)
         val user = sessionManager.getUser()
-        val startDestination = if (user != null) "list" else "login"
+        val startDestination = if (user != null) "recents" else "login"
         setContent {
             RIPVesselTheme {
                 val navController = rememberNavController()

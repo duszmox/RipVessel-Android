@@ -1,7 +1,6 @@
 package hu.cock.ripvessel.creator
 
 import android.content.Intent
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,7 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import hu.cock.ripvessel.creator.repository.CreatorRepository
 import hu.cock.ripvessel.home.VideoListItem
 import hu.cock.ripvessel.home.model.VideoListItemModel
@@ -116,6 +115,7 @@ fun CreatorScreen(
                                 .size(80.dp)
                                 .clip(CircleShape),
                             contentScale = ContentScale.Crop
+
                         )
                         Spacer(modifier = Modifier.width(16.dp))
                         Text(

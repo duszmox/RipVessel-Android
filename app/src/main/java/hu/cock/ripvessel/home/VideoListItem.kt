@@ -16,10 +16,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
-import coil.compose.rememberAsyncImagePainter
 import hu.cock.ripvessel.home.model.VideoListItemModel
 import androidx.compose.foundation.clickable
+import coil3.compose.AsyncImage
 
 @Composable
 fun VideoListItem(

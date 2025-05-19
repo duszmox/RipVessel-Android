@@ -60,17 +60,9 @@ fun HomeScreen(
 
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         LazyColumn(
-            modifier = Modifier.padding(innerPadding),
+            modifier = Modifier.padding(innerPadding).padding(bottom = 0.dp),
             state = listState
         ) {
-            item {
-                Button(onClick = {
-                    hu.cock.ripvessel.SessionManager(context).clearSession()
-                    onLogout()
-                }, modifier = Modifier.padding(16.dp)) {
-                    Text("Logout")
-                }
-            }
             itemsIndexed(videoItems) { _, video ->
                 VideoListItem(
                     video = video,

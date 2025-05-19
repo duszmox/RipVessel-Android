@@ -1,8 +1,12 @@
+import org.gradle.kotlin.dsl.implementation
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     id("org.openapi.generator") version "7.12.0"
+    id("com.google.firebase.crashlytics")
+    id("com.google.gms.google-services")
 }
 
 
@@ -51,13 +55,11 @@ android {
     buildFeatures {
         compose = true
     }
-
     sourceSets {
         getByName("main") {
             java.srcDirs("$projectDir/build/src/main/kotlin")
         }
     }
-
 }
 
 dependencies {
@@ -81,7 +83,6 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation(libs.gson)
     implementation(libs.androidx.navigation.compose)
-    implementation(libs.coil.compose)
     implementation(libs.moshi)
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.media3.exoplayer)
@@ -96,6 +97,13 @@ dependencies {
     implementation(libs.androidx.runtime.livedata)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.foundation)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.crashlytics)
+    implementation(libs.firebase.analytics)
+    implementation(libs.coil)
+    implementation(libs.coil.okhttp)
+
+
 }
 
 tasks.named("preBuild") {

@@ -77,9 +77,6 @@ class VideoActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Allow both landscape orientations
-        // requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-
         // Check initial orientation and set fullscreen state
         isFullScreen = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
         if (isFullScreen) {
