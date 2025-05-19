@@ -69,6 +69,8 @@ class VideoViewModel(
                             scenario = ScenarioGetDeliveryInfoV3.onDemand,
                             entityId = videoId
                         )
+                        _playbackPosition.value = (videoResponse.progress ?: 0).toLong()
+
                         _stream.value = deliveryResponse
 
                         // Set qualities and default quality
@@ -96,7 +98,7 @@ class VideoViewModel(
         updateUserInteraction(ContentPostV3Response.UserInteraction.dislike)
     }
 
-    fun uploadProgress(progress: Double) {
+    fun uploadProgress(progress: Int) {
         val video = _video.value ?: return
         viewModelScope.launch {
             try {

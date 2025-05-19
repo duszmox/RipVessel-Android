@@ -4,6 +4,7 @@ import android.app.PictureInPictureParams
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.os.Bundle
+import android.util.Log
 import android.util.Rational
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -215,6 +216,7 @@ fun VideoScreen(
         onDispose {
             exoPlayer?.let { player ->
                 viewModel.updatePlaybackPosition(player.currentPosition)
+                viewModel.uploadProgress((player.currentPosition/1000).toInt())
                 player.release()
             }
         }
@@ -252,7 +254,8 @@ fun VideoScreen(
                     setMediaItem(MediaItem.fromUri(url))
                     prepare()
                     playWhenReady = true
-                    seekTo(playbackPosition)
+                    Log.d("PLAYBACK_POSITION", (playbackPosition*1000).toString())
+                    seekTo(playbackPosition*1000)
 
                     // Listen for video size changes
                     addListener(object : Player.Listener {
@@ -261,6 +264,8 @@ fun VideoScreen(
                             videoHeight = videoSize.height
                             onVideoSizeChanged(videoSize.width, videoSize.height)
                         }
+
+
                     })
                 }
 

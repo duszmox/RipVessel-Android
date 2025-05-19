@@ -9,6 +9,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
@@ -30,6 +34,7 @@ import hu.cock.ripvessel.home.repository.HomeRepository
 import hu.cock.ripvessel.ui.theme.RIPVesselTheme
 import hu.cock.ripvessel.video.VideoActivity
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun HomeScreen(
     onNavigateToCreator: (String, String?) -> Unit
@@ -44,13 +49,19 @@ fun HomeScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val listState = rememberLazyListState()
 
+    // Add pull refresh state
+    val pullRefreshState = rememberPullRefreshState(
+        refreshing = isLoading,
+        onRefresh = { viewModel.resetAndLoad() }
+    )
+
     // Infinite scroll: load more when near the end
     LaunchedEffect(listState) {
         snapshotFlow {
             listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
         }.collect { lastVisibleIndex ->
-            if (lastVisibleIndex != null && 
-                lastVisibleIndex >= videoItems.size - 3 && 
+            if (lastVisibleIndex != null &&
+                lastVisibleIndex >= videoItems.size - 3 &&
                 !isLoading) {
                 viewModel.loadMoreVideos()
             }
@@ -58,33 +69,39 @@ fun HomeScreen(
     }
 
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier.padding(top = innerPadding.calculateTopPadding()).padding(bottom = 0.dp),
-            state = listState
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .pullRefresh(pullRefreshState)
         ) {
-            itemsIndexed(videoItems) { _, video ->
-                VideoListItem(
-                    video = video,
-                    onClick = {
-                        val intent = Intent(context, VideoActivity::class.java).apply {
-                            putExtra("post_id", video.postId)
+            LazyColumn(
+                modifier = Modifier.padding(top = innerPadding.calculateTopPadding()).padding(bottom = 0.dp),
+                state = listState
+            ) {
+                itemsIndexed(videoItems) { _, video ->
+                    VideoListItem(
+                        video = video,
+                        onClick = {
+                            val intent = Intent(context, VideoActivity::class.java).apply {
+                                putExtra("post_id", video.postId)
+                            }
+                            context.startActivity(intent)
+                        },
+                        onCreatorClick = {
+                            onNavigateToCreator(video.creatorId, video.channelId)
                         }
-                        context.startActivity(intent)
-                    },
-                    onCreatorClick = {
-                        onNavigateToCreator(video.creatorId, video.channelId)
-                    }
-                )
-            }
-            if (isLoading) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                    )
+                }
+                if (isLoading) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                        }
                     }
                 }
             }
