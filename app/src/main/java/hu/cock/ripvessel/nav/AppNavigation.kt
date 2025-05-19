@@ -78,11 +78,6 @@ fun AppNavigation(navController: NavHostController, startDestination: String = "
             
             composable("recents") {
                 HomeScreen(
-                    onLogout = {
-                        navController.navigate("login") {
-                            popUpTo("login") { inclusive = true }
-                        }
-                    },
                     onNavigateToCreator = { creatorId, channelId ->
                         navController.navigate("creator/$creatorId/$channelId")
                     }
@@ -90,9 +85,11 @@ fun AppNavigation(navController: NavHostController, startDestination: String = "
             }
 
             composable("channels") {
-                ChannelsScreen() { creatorId, channelId ->
-                    navController.navigate("creator/$creatorId/$channelId")
-                }
+                ChannelsScreen(
+                    onChannelClick = { creatorId, channelId ->
+                        navController.navigate("creator/$creatorId/$channelId")
+                    }
+                )
             }
 
             composable("profile") {

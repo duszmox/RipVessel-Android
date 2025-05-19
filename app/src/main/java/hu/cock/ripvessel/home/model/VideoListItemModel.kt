@@ -11,5 +11,7 @@ data class VideoListItemModel(
     val creatorName: String,
     val creatorProfileUrl: String?,
     val releaseDate: String,
-    val duration: String
+    val duration: String,
+    val progressPercentage: Float = 0f, // Progress from 0.0 to 1.0
+    val progress: Int
 ) 

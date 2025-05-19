@@ -84,8 +84,9 @@ class HomeRepository(private val context: Context) {
                             releaseDate = releaseDate,
                             duration = durationFormatted,
                             creatorId = post.creator.id,
-                            channelId = post.channel.id
-                        )
+                            channelId = post.channel.id,
+                            progress = video.progress ?: 0,
+                            progressPercentage = video.progress?.let { it.toFloat() / video.duration.toFloat() } ?: 0f                        )
                     } catch (e: Exception) {
                         Log.e("HomeRepository", "Error loading video $videoId: ${e.message}", e)
                         null

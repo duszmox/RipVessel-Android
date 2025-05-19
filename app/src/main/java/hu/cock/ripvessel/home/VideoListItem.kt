@@ -24,7 +24,7 @@ import coil3.compose.AsyncImage
 fun VideoListItem(
     video: VideoListItemModel,
     onClick: () -> Unit,
-    onCreatorClick: () -> Unit
+    onCreatorClick: () -> Unit,
 ) {
     Card(
         modifier = Modifier
@@ -42,6 +42,24 @@ fun VideoListItem(
                         .aspectRatio(16f / 9f),
                     contentScale = ContentScale.Crop
                 )
+                if (video.progressPercentage > 0) {
+                    // Progress bar at the bottom
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(6.dp)
+                            .align(Alignment.BottomCenter)
+                            .background(Color.Black.copy(alpha = 0.3f))
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(video.progressPercentage)
+                                .height(6.dp)
+                                .background(Color(0xFFE1514A))
+                        )
+                    }
+                }
+
                 // Video duration at bottom right
                 Box(
                     modifier = Modifier

@@ -78,22 +78,7 @@ class CreatorViewModel(
                     creatorId,
                     channelId = channelId
                 )
-                val newVideos = initial.map { content ->
-                    VideoListItemModel(
-                        postId = content.postId,
-                        videoId = content.videoId ?: "",
-                        title = content.title,
-                        description = content.description ?: "",
-                        thumbnailUrl = content.thumbnailUrl,
-                        creatorId = content.creatorId,
-                        creatorName = content.creatorName,
-                        creatorProfileUrl = content.creatorProfileUrl,
-                        releaseDate = content.releaseDate,
-                        duration = content.duration ?: "0:00",
-                        channelId = content.channelId
-                    )
-                }
-                _videoItems.value = newVideos
+                _videoItems.value = initial
                 currentPage = 1
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -111,22 +96,7 @@ class CreatorViewModel(
         viewModelScope.launch {
             try {
                 val more = repository.loadMoreVideos(creatorId, channelId, currentPage)
-                val newVideos = more.map { content ->
-                    VideoListItemModel(
-                        postId = content.postId,
-                        videoId = content.videoId ?: "",
-                        title = content.title,
-                        description = content.description ?: "",
-                        thumbnailUrl = content.thumbnailUrl,
-                        creatorId = content.creatorId,
-                        creatorName = content.creatorName,
-                        creatorProfileUrl = content.creatorProfileUrl,
-                        releaseDate = content.releaseDate,
-                        duration = content.duration ?: "0:00",
-                        channelId = content.channelId
-                    )
-                }
-                _videoItems.value = _videoItems.value + newVideos
+                _videoItems.value = _videoItems.value + more
                 currentPage++
             } catch (e: Exception) {
                 // Handle error

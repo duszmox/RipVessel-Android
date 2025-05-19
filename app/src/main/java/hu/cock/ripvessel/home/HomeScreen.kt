@@ -32,7 +32,6 @@ import hu.cock.ripvessel.video.VideoActivity
 
 @Composable
 fun HomeScreen(
-    onLogout: () -> Unit,
     onNavigateToCreator: (String, String?) -> Unit
 ) {
     val context = LocalContext.current
@@ -60,7 +59,7 @@ fun HomeScreen(
 
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         LazyColumn(
-            modifier = Modifier.padding(innerPadding).padding(bottom = 0.dp),
+            modifier = Modifier.padding(top = innerPadding.calculateTopPadding()).padding(bottom = 0.dp),
             state = listState
         ) {
             itemsIndexed(videoItems) { _, video ->
@@ -98,7 +97,6 @@ fun HomeScreen(
 fun HomeScreenPreview() {
     RIPVesselTheme {
         HomeScreen(
-            onLogout = {},
             onNavigateToCreator = { _, _ ->
 
             }
