@@ -2,18 +2,25 @@ package hu.cock.ripvessel.home.repository
 
 import android.content.Context
 import android.util.Log
+import dagger.hilt.android.qualifiers.ApplicationContext
+import hu.cock.ripvessel.api.DeepObjectContentApi
 import hu.cock.ripvessel.home.model.VideoListItemModel
-import hu.gyulakiri.ripvessel.api.SubscriptionsV3Api
 import hu.gyulakiri.ripvessel.api.ContentV3Api
+import hu.gyulakiri.ripvessel.api.SubscriptionsV3Api
 import hu.gyulakiri.ripvessel.model.ContentCreatorListLastItems
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.format.DateTimeFormatter
-import hu.cock.ripvessel.network.createAuthenticatedClient
 import java.util.concurrent.TimeUnit
-import hu.cock.ripvessel.api.DeepObjectContentApi
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class HomeRepository(private val context: Context) {
+@Singleton
+class HomeRepository @Inject constructor(
+    @ApplicationContext private val context: Context,
+    private val subscriptionsApi: SubscriptionsV3Api,
+    private val contentApi: ContentV3Api
+) {
     private var creatorIds: List<String> = emptyList()
     private var lastElements: List<ContentCreatorListLastItems>? = null
     private var isFirstLoad = true
@@ -30,9 +37,6 @@ class HomeRepository(private val context: Context) {
 
     suspend fun loadMoreVideos(): List<VideoListItemModel> = withContext(Dispatchers.IO) {
         try {
-            val client = createAuthenticatedClient(context)
-            val subscriptionsApi = SubscriptionsV3Api(client = client)
-            val contentApi = ContentV3Api(client = client)
             if (isFirstLoad) {
                 val subscriptions = subscriptionsApi.listUserSubscriptionsV3()
                 Log.d("HomeRepository", "Fetched subscriptions: ${subscriptions.size} -> $subscriptions")

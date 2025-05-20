@@ -110,9 +110,7 @@ fun AppNavigation(navController: NavHostController, startDestination: String = "
                     creatorId = creatorId,
                     channelId = channelId
                 ) {
-                    navController.navigate("recents") {
-                        popUpTo("recents") { inclusive = true }
-                    }
+                    navController.popBackStack()
                 }
             }
         }

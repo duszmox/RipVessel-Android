@@ -1,5 +1,6 @@
 package hu.cock.ripvessel.video
 
+import android.app.Application
 import android.app.PictureInPictureParams
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
@@ -8,6 +9,8 @@ import android.util.Log
 import android.util.Rational
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
+import androidx.activity.viewModels
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -39,6 +42,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.SavedStateHandle
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -55,15 +59,34 @@ import hu.cock.ripvessel.video.components.QualitySelectionDialog
 import hu.cock.ripvessel.video.components.VideoControls
 import hu.cock.ripvessel.video.components.VideoDescription
 import hu.cock.ripvessel.video.components.VideoPlayer
+import dagger.hilt.android.AndroidEntryPoint
+import hu.gyulakiri.ripvessel.api.ContentV3Api
+import hu.gyulakiri.ripvessel.api.DeliveryV3Api
+import javax.inject.Inject
+import kotlin.jvm.java
 
+@AndroidEntryPoint
 class VideoActivity : ComponentActivity() {
+    @Inject
+    lateinit var contentApi: ContentV3Api
+
+    @Inject
+    lateinit var deliveryApi: DeliveryV3Api
+
     private val viewModel: VideoViewModel by viewModels {
         object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                val postId = intent.getStringExtra("post_id")
-                    ?: throw IllegalArgumentException("post_id is required")
+                val postId = intent.getStringExtra("postId") ?: throw IllegalArgumentException("postId is required")
+                val savedStateHandle = SavedStateHandle().apply {
+                    set("postId", postId)
+                }
                 @Suppress("UNCHECKED_CAST")
-                return VideoViewModel(application, postId) as T
+                return modelClass.getConstructor(
+                    Application::class.java,
+                    SavedStateHandle::class.java,
+                    ContentV3Api::class.java,
+                    DeliveryV3Api::class.java
+                ).newInstance(application, savedStateHandle, contentApi, deliveryApi) as T
             }
         }
     }
@@ -77,7 +100,8 @@ class VideoActivity : ComponentActivity() {
     @androidx.annotation.OptIn(UnstableApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+        val postId = intent.getStringExtra("postId") ?: return finish()
+        
         // Check initial orientation and set fullscreen state
         isFullScreen = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
         if (isFullScreen) {
@@ -177,7 +201,6 @@ class VideoActivity : ComponentActivity() {
         }
     }
 }
-
 
 @UnstableApi
 @OptIn(ExperimentalMaterial3Api::class)

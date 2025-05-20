@@ -3,17 +3,23 @@ package hu.cock.ripvessel.login
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import hu.cock.ripvessel.SessionManager
+import hu.gyulakiri.ripvessel.api.AuthV2Api
+import hu.gyulakiri.ripvessel.model.AuthLoginV2Request
+import hu.gyulakiri.ripvessel.model.UserModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import hu.gyulakiri.ripvessel.api.AuthV2Api
-import hu.gyulakiri.ripvessel.model.AuthLoginV2Request
-import hu.gyulakiri.ripvessel.model.UserModel
+import javax.inject.Inject
 
-class LoginViewModel(application: Application) : AndroidViewModel(application) {
+@HiltViewModel
+class LoginViewModel @Inject constructor(
+    application: Application,
+    private val authApi: AuthV2Api
+) : AndroidViewModel(application) {
     // Use a StateFlow to hold the error message
     private val _errorMessage = MutableStateFlow("")
     val errorMessage: StateFlow<String> get() = _errorMessage
@@ -29,9 +35,8 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             try {
                 // Call the login API and get the full HTTP info to access cookies
-                val api = AuthV2Api()
                 val response = withContext(Dispatchers.IO) {
-                    api.loginWithHttpInfo(AuthLoginV2Request(username, password))
+                    authApi.loginWithHttpInfo(AuthLoginV2Request(username, password))
                 }
                 // Log all Set-Cookie headers for debugging
                 val setCookieHeaders = response.headers["Set-Cookie"] ?: emptyList()

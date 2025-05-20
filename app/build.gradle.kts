@@ -7,6 +7,8 @@ plugins {
     id("org.openapi.generator") version "7.12.0"
     id("com.google.firebase.crashlytics")
     id("com.google.gms.google-services")
+    alias(libs.plugins.google.devtools.ksp)
+    alias(libs.plugins.google.dagger.hilt.android)
 }
 
 
@@ -103,7 +105,9 @@ dependencies {
     implementation(libs.coil)
     implementation(libs.coil.okhttp)
 
-
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.android.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
 }
 
 tasks.named("preBuild") {

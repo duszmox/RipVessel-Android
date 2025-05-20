@@ -10,13 +10,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -27,10 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewmodel.compose.viewModel
-import hu.cock.ripvessel.home.repository.HomeRepository
+import androidx.hilt.navigation.compose.hiltViewModel
 import hu.cock.ripvessel.ui.theme.RIPVesselTheme
 import hu.cock.ripvessel.video.VideoActivity
 
@@ -40,11 +34,7 @@ fun HomeScreen(
     onNavigateToCreator: (String, String?) -> Unit
 ) {
     val context = LocalContext.current
-    val viewModel: HomeViewModel = viewModel(factory = object : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return HomeViewModel(HomeRepository(context)) as T
-        }
-    })
+    val viewModel: HomeViewModel = hiltViewModel()
     val videoItems by viewModel.videoItems.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val listState = rememberLazyListState()
@@ -83,7 +73,7 @@ fun HomeScreen(
                         video = video,
                         onClick = {
                             val intent = Intent(context, VideoActivity::class.java).apply {
-                                putExtra("post_id", video.postId)
+                                putExtra("postId", video.postId)
                             }
                             context.startActivity(intent)
                         },
@@ -120,3 +110,4 @@ fun HomeScreenPreview() {
         )
     }
 }
+

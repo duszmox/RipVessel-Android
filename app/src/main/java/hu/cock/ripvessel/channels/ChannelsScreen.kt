@@ -1,10 +1,8 @@
 package hu.cock.ripvessel.channels
 
-import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,13 +12,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -30,6 +28,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
@@ -39,9 +38,9 @@ import hu.gyulakiri.ripvessel.model.CreatorModelV3
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChannelsScreen(
-    viewModel: ChannelsViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
-    onChannelClick: (String, String?) -> Unit = { _, _ -> }
+    onChannelClick: (String, String?) -> Unit
 ) {
+    val viewModel: ChannelsViewModel = hiltViewModel()
     val creators by viewModel.creators.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
@@ -49,54 +48,45 @@ fun ChannelsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Your Subscribed Channels") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+                title = { Text("Channels") }
             )
         }
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) { padding ->
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center
             ) {
-                if (isLoading) {
-                    item {
-                        Box(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator()
-                        }
-                    }
-                }
-
+                CircularProgressIndicator()
+            }
+        } else if (error != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = error ?: "Unknown error",
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 items(creators) { creator ->
                     CreatorItem(
                         creator = creator,
-                        onChannelClick = onChannelClick
-                    )
-                }
-            }
-
-            error?.let { errorMessage ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = errorMessage,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.error
+                        onChannelClick = { creatorId, channelId ->
+                            onChannelClick(creatorId, channelId)
+                        }
                     )
                 }
             }
@@ -104,21 +94,20 @@ fun ChannelsScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CreatorItem(
+fun CreatorItem(
     creator: CreatorModelV3,
     onChannelClick: (String, String?) -> Unit
 ) {
-    val iconUrl = creator.icon.path.toString()
-    Log.d("CreatorItem", "Loading creator icon from URL → $iconUrl")
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { onChannelClick(creator.id, null) },
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -131,10 +120,7 @@ private fun CreatorItem(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape),
-                contentScale = ContentScale.Crop,
-                onError = { e ->
-                    Log.e("CreatorItem", "Error loading image: ${e.result.throwable}")
-                }
+                contentScale = ContentScale.Crop
             )
             Text(
                 text = creator.title,
@@ -161,7 +147,7 @@ private fun ChannelItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 10.dp)
+            .padding(start = 30.dp, bottom = 6.dp)
             .clickable { onChannelClick(creatorId, channel.id) },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -170,13 +156,14 @@ private fun ChannelItem(
             model = channel.icon.path.toString(),
             contentDescription = "Channel profile",
             modifier = Modifier
-                .size(30.dp)
+                .size(35.dp)
                 .clip(CircleShape),
             contentScale = ContentScale.Crop
         )
         Text(
             text = channel.title,
-            style = MaterialTheme.typography.bodyMedium
+            style = MaterialTheme.typography.bodyLarge
         )
     }
 }
+

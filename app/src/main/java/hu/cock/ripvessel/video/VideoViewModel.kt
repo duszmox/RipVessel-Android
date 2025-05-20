@@ -1,9 +1,10 @@
 package hu.cock.ripvessel.video
 
 import android.app.Application
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import hu.cock.ripvessel.network.createAuthenticatedClient
+import dagger.hilt.android.lifecycle.HiltViewModel
 import hu.gyulakiri.ripvessel.api.ContentV3Api
 import hu.gyulakiri.ripvessel.api.DeliveryV3Api
 import hu.gyulakiri.ripvessel.api.DeliveryV3Api.ScenarioGetDeliveryInfoV3
@@ -14,11 +15,17 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
-class VideoViewModel(
+@HiltViewModel
+class VideoViewModel @Inject constructor(
     application: Application,
-    private val postId: String
+    private val savedStateHandle: SavedStateHandle,
+    private val contentApi: ContentV3Api,
+    private val deliveryApi: DeliveryV3Api
 ) : ViewModel() {
+
+    private val postId: String = savedStateHandle.get<String>("postId") ?: throw IllegalArgumentException("postId is required")
 
     private val appContext = application.applicationContext
     private val _post = MutableStateFlow<ContentPostV3Response?>(null)
@@ -50,10 +57,6 @@ class VideoViewModel(
         viewModelScope.launch {
             try {
                 withContext(Dispatchers.IO) {
-                    val client = createAuthenticatedClient(appContext)
-                    val contentApi = ContentV3Api(client = client)
-                    val deliveryApi = DeliveryV3Api(client = client)
-
                     // Fetch post content
                     val postResponse = contentApi.getBlogPost(postId)
                     _post.value = postResponse
@@ -103,8 +106,6 @@ class VideoViewModel(
         viewModelScope.launch {
             try {
                 withContext(Dispatchers.IO) {
-                    val client = createAuthenticatedClient(appContext)
-                    val contentApi = ContentV3Api(client = client)
                     contentApi.updateProgress(
                         UpdateProgressRequest(
                             id = video.id,
@@ -123,8 +124,6 @@ class VideoViewModel(
         viewModelScope.launch {
             try {
                 withContext(Dispatchers.IO) {
-                    val client = createAuthenticatedClient(appContext)
-                    val contentApi = ContentV3Api(client = client)
                     val post = _post.value ?: return@withContext
                     val alreadyLiked = post.userInteraction?.contains(ContentPostV3Response.UserInteraction.like)
                     val alreadyDisliked = post.userInteraction?.contains(ContentPostV3Response.UserInteraction.dislike)

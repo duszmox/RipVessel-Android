@@ -1,36 +1,38 @@
 package hu.cock.ripvessel.creator.repository
 
-import android.content.Context
 import android.util.Log
 import hu.cock.ripvessel.home.model.VideoListItemModel
-import hu.cock.ripvessel.network.createAuthenticatedClient
 import hu.gyulakiri.ripvessel.api.ContentV3Api
 import hu.gyulakiri.ripvessel.api.CreatorV3Api
 import hu.gyulakiri.ripvessel.model.BlogPostModelV3
 import hu.gyulakiri.ripvessel.model.CreatorModelV3
-import hu.gyulakiri.ripvessel.model.ContentCreatorListV3Response
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class CreatorRepository(private val context: Context) {
+@Singleton
+class CreatorRepository @Inject constructor(
+    private val creatorApi: CreatorV3Api,
+    private val contentApi: ContentV3Api
+) {
 
-    suspend fun getCreatorInfo(creatorId: String): CreatorModelV3 = withContext(Dispatchers.IO) {
-        val client = createAuthenticatedClient(context)
-        val creatorApi = CreatorV3Api(client = client)
-        creatorApi.getCreator(creatorId)
+    suspend fun getCreator(id: String): CreatorModelV3 = withContext(Dispatchers.IO) {
+        creatorApi.getCreator(id)
     }
 
+    suspend fun getCreatorPosts(creatorId: String): List<BlogPostModelV3> = withContext(Dispatchers.IO) {
+        contentApi.getCreatorBlogPosts(creatorId)
+    }
 
     suspend fun getInitialVideos(creatorId: String, channelId: String?, fetchAfter: Int = 0): List<VideoListItemModel> = withContext(Dispatchers.IO) {
-        val client = createAuthenticatedClient(context)
-        val contentApi = ContentV3Api(client = client)
         val blogPosts = contentApi.getCreatorBlogPosts(
             creatorId, channelId, limit = 10, fetchAfter = fetchAfter
         )
         val videoPosts =
-            blogPosts.filter { it.videoAttachments != null && it.videoAttachments!!.isNotEmpty() }
+            blogPosts.filter { it.videoAttachments != null && it.videoAttachments.isNotEmpty() }
         Log.d("HomeRepository", "Filtered videoPosts: ${videoPosts.size}")
         return@withContext videoPosts.flatMap { post ->
             val creatorName = post.channel.title

@@ -4,8 +4,6 @@ import android.content.Context
 import hu.cock.ripvessel.SessionManager
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
-import okhttp3.Interceptor
-import okhttp3.Response
 
 fun createAuthenticatedClient(context: Context): OkHttpClient {
     val sessionManager = SessionManager(context)
