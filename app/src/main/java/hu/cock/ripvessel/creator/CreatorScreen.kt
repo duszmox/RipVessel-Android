@@ -1,13 +1,10 @@
 package hu.cock.ripvessel.creator
 
 import android.content.Intent
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -17,7 +14,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -32,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -39,7 +36,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
-import hu.cock.ripvessel.home.VideoListItem
+import hu.cock.ripvessel.ui.components.VideoListItem
+import hu.cock.ripvessel.ui.components.VideoListItemLoading
 import hu.cock.ripvessel.video.VideoActivity
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -94,14 +92,13 @@ fun CreatorScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(200.dp)
                 ) {
                     // Cover image
                     AsyncImage(
                         model = channelInfo?.coverImageUrl ?: creatorInfo?.coverImageUrl,
                         contentDescription = "Creator cover",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
+                        modifier = Modifier.fillMaxWidth().blur(radius = 16.dp),
+                        contentScale = ContentScale.FillWidth
                     )
                     
                     // Profile picture and name overlay
@@ -109,7 +106,6 @@ fun CreatorScreen(
                         modifier = Modifier
                             .align(Alignment.BottomStart)
                             .fillMaxWidth()
-                            .background(Color.Black.copy(alpha = 0.6f))
                             .padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -138,7 +134,7 @@ fun CreatorScreen(
                     video = video,
                     onClick = {
                         val intent = Intent(context, VideoActivity::class.java).apply {
-                            putExtra("post_id", video.postId)
+                            putExtra("postId", video.postId)
                         }
                         context.startActivity(intent)
                     },
@@ -148,15 +144,8 @@ fun CreatorScreen(
 
             // Loading indicator
             if (isLoading) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
+                items(count = 3) {
+                    VideoListItemLoading()
                 }
             }
         }

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<font-family xmlns:app="http://schemas.android.com/apk/res-auto">
+    <!-- Regular -->
+    <font
+        app:font="@font/firasans_regular"
+        app:fontStyle="normal"
+        app:fontWeight="400" />
+    <font
+        app:font="@font/firasans_italic"
+        app:fontStyle="italic"
+        app:fontWeight="400" />
+    
+    <!-- Light -->
+    <font
+        app:font="@font/firasans_light"
+        app:fontStyle="normal"
+        app:fontWeight="300" />
+    <font
+        app:font="@font/firasans_lightitalic"
+        app:fontStyle="italic"
+        app:fontWeight="300" />
+    
+    <!-- Medium -->
+    <font
+        app:font="@font/firasans_medium"
+        app:fontStyle="normal"
+        app:fontWeight="500" />
+    <font
+        app:font="@font/firasans_mediumitalic"
+        app:fontStyle="italic"
+        app:fontWeight="500" />
+    
+    <!-- SemiBold -->
+    <font
+        app:font="@font/firasans_semibold"
+        app:fontStyle="normal"
+        app:fontWeight="600" />
+    <font
+        app:font="@font/firasans_semibolditalic"
+        app:fontStyle="italic"
+        app:fontWeight="600" />
+    
+    <!-- Bold -->
+    <font
+        app:font="@font/firasans_bold"
+        app:fontStyle="normal"
+        app:fontWeight="700" />
+    <font
+        app:font="@font/firasans_bolditalic"
+        app:fontStyle="italic"
+        app:fontWeight="700" />
+    
+    <!-- ExtraBold -->
+    <font
+        app:font="@font/firasans_extrabold"
+        app:fontStyle="normal"
+        app:fontWeight="800" />
+    <font
+        app:font="@font/firasans_extrabolditalic"
+        app:fontStyle="italic"
+        app:fontWeight="800" />
+    
+    <!-- Black -->
+    <font
+        app:font="@font/firasans_black"
+        app:fontStyle="normal"
+        app:fontWeight="900" />
+    <font
+        app:font="@font/firasans_blackitalic"
+        app:fontStyle="italic"
+        app:fontWeight="900" />
+    
+    <!-- Thin -->
+    <font
+        app:font="@font/firasans_thin"
+        app:fontStyle="normal"
+        app:fontWeight="100" />
+    <font
+        app:font="@font/firasans_thinitalic"
+        app:fontStyle="italic"
+        app:fontWeight="100" />
+    
+    <!-- ExtraLight -->
+    <font
+        app:font="@font/firasans_extralight"
+        app:fontStyle="normal"
+        app:fontWeight="200" />
+    <font
+        app:font="@font/firasans_extralightitalic"
+        app:fontStyle="italic"
+        app:fontWeight="200" />
+</font-family> 
