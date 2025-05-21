@@ -91,13 +91,13 @@ fun CreatorScreen(
             item {
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
+                        .fillMaxWidth().padding(bottom = 8.dp)
                 ) {
                     // Cover image
                     AsyncImage(
                         model = channelInfo?.coverImageUrl ?: creatorInfo?.coverImageUrl,
                         contentDescription = "Creator cover",
-                        modifier = Modifier.fillMaxWidth().blur(radius = 16.dp),
+                        modifier = Modifier.fillMaxWidth().blur(radius = 8.dp),
                         contentScale = ContentScale.FillWidth
                     )
                     
