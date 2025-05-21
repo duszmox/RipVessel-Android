@@ -19,9 +19,7 @@ import hu.gyulakiri.ripvessel.model.ContentPostV3Response
 
 @Composable
 fun VideoControls(
-    currentQuality: CdnDeliveryV3Variant?,
     post: ContentPostV3Response?,
-    onQualityClick: () -> Unit,
     onLike: () -> Unit,
     onDislike: () -> Unit,
     modifier: Modifier = Modifier
@@ -33,10 +31,6 @@ fun VideoControls(
         horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Button(onClick = onQualityClick) {
-            Text(currentQuality?.label ?: "Select Quality")
-        }
-
         Row {
             ReactionButton(
                 icon = Icons.Default.ThumbUp,

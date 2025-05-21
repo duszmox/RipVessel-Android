@@ -37,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -47,6 +48,7 @@ import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
@@ -76,7 +78,8 @@ class VideoActivity : ComponentActivity() {
     private val viewModel: VideoViewModel by viewModels {
         object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                val postId = intent.getStringExtra("postId") ?: throw IllegalArgumentException("postId is required")
+                val postId = intent.getStringExtra("postId")
+                    ?: throw IllegalArgumentException("postId is required")
                 val savedStateHandle = SavedStateHandle().apply {
                     set("postId", postId)
                 }
@@ -96,12 +99,13 @@ class VideoActivity : ComponentActivity() {
     private var inPipMode by mutableStateOf(false)
     private var isFullScreen by mutableStateOf(false)
     private var suppressConfigChangeExit = false
+    private var showQualityDialog by mutableStateOf(false)
 
     @androidx.annotation.OptIn(UnstableApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val postId = intent.getStringExtra("postId") ?: return finish()
-        
+
         // Check initial orientation and set fullscreen state
         isFullScreen = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
         if (isFullScreen) {
@@ -227,19 +231,12 @@ fun VideoScreen(
 
     val context = LocalContext.current
 
-    // Update fullscreen button state when isFullScreen changes
-    LaunchedEffect(isFullScreen) {
-        playerView?.setFullscreenButtonClickListener { enterFullScreen ->
-            onFullScreenChange(enterFullScreen)
-        }
-    }
-
     // Single DisposableEffect for player lifecycle
     DisposableEffect(Unit) {
         onDispose {
             exoPlayer?.let { player ->
                 viewModel.updatePlaybackPosition(player.currentPosition)
-                viewModel.uploadProgress((player.currentPosition/1000).toInt())
+                viewModel.uploadProgress((player.currentPosition / 1000).toInt())
                 player.release()
             }
         }
@@ -248,6 +245,14 @@ fun VideoScreen(
     LaunchedEffect(currentQuality) {
         currentQuality?.let { quality ->
             val oldPlayer = exoPlayer
+            // Store current position and playing state before creating new player
+            val currentPosition = oldPlayer?.currentPosition ?: 0L
+            val wasPlaying = oldPlayer?.isPlaying ?: true
+
+            // Release old player first to prevent state conflicts
+            oldPlayer?.release()
+            exoPlayer = null  // Set to null during transition
+
             // Build and inject auth cookie into HTTP data source
             val sessionValue = SessionManager(context).getAuthCookie() ?: ""
             val httpDataSourceFactory = DefaultHttpDataSource.Factory()
@@ -276,24 +281,22 @@ fun VideoScreen(
                         if (quality.url.startsWith("/")) viewModel.origin.value + quality.url else quality.url
                     setMediaItem(MediaItem.fromUri(url))
                     prepare()
-                    playWhenReady = true
-                    Log.d("PLAYBACK_POSITION", (playbackPosition*1000).toString())
-                    seekTo(playbackPosition*1000)
+
+                    // Restore position and playing state
+                    seekTo(currentPosition)
+                    playWhenReady = wasPlaying
 
                     // Listen for video size changes
                     addListener(object : Player.Listener {
-                        override fun onVideoSizeChanged(videoSize: androidx.media3.common.VideoSize) {
+                        override fun onVideoSizeChanged(videoSize: VideoSize) {
                             videoWidth = videoSize.width
                             videoHeight = videoSize.height
                             onVideoSizeChanged(videoSize.width, videoSize.height)
                         }
-
-
                     })
                 }
 
             exoPlayer = newPlayer
-            oldPlayer?.release()
         }
     }
 
@@ -304,61 +307,68 @@ fun VideoScreen(
                     title = {
                         Text(
                             text = post?.title ?: "",
-                            maxLines = 2,
+                            maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                     },
                     navigationIcon = {
                         IconButton(onClick = onBackPressed) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back"
+                            )
                         }
                     },
                     actions = {
                         IconButton(
                             onClick = {
-                                if (videoWidth > 0 && videoHeight > 0) {
-                                    onEnterPip(Rational(videoWidth, videoHeight))
-                                } else {
-                                    // Fallback to 16:9 if video dimensions are not yet available
-                                    onEnterPip(Rational(16, 9))
-                                }
+                                val ratio = if (videoWidth > 0 && videoHeight > 0)
+                                    Rational(videoWidth, videoHeight)
+                                else
+                                    Rational(16, 9)
+                                onEnterPip(ratio)
                             }
                         ) {
                             Icon(
                                 imageVector = Icons.Default.PictureInPicture,
-                                contentDescription = "Enter Picture-in-Picture"
+                                contentDescription = "Picture in Picture"
                             )
                         }
                     }
                 )
             }
         }
-    ) { padding ->
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(paddingValues)
         ) {
             VideoPlayer(
                 exoPlayer = exoPlayer,
                 modifier = Modifier.fillMaxWidth(),
                 isFullScreen = isFullScreen,
                 onFullScreenChange = onFullScreenChange,
-                onPlayerViewReady = { view -> playerView = view }
+                onPlayerViewReady = { playerView = it },
+                onShowQualitySelector = { showQualitySelector = true }
             )
 
-            if (!isFullScreen) {
-                VideoControls(
-                    currentQuality = currentQuality,
-                    post = post,
-                    onQualityClick = { showQualitySelector = true },
-                    onLike = { viewModel.like() },
-                    onDislike = { viewModel.dislike() }
-                )
+            VideoControls(
+                post = post,
+                onLike = {
+                    viewModel.like()
+                },
+                onDislike = {
+                    viewModel.dislike()
+                },
+            )
 
+            if (!isInPictureInPictureMode && !isFullScreen) {
                 VideoDescription(
                     text = post?.text,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
                 )
             }
         }
@@ -366,7 +376,11 @@ fun VideoScreen(
         if (showQualitySelector) {
             QualitySelectionDialog(
                 qualities = qualities,
-                onQualitySelected = { viewModel.setQuality(it) },
+//                currentQuality = currentQuality,
+                onQualitySelected = { quality ->
+                    viewModel.setQuality(quality)
+                    showQualitySelector = false
+                },
                 onDismiss = { showQualitySelector = false }
             )
         }
