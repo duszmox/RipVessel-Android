@@ -8,6 +8,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import hu.cock.ripvessel.network.createAuthenticatedClient
 import hu.gyulakiri.ripvessel.api.AuthV2Api
+import hu.gyulakiri.ripvessel.api.CommentV3Api
 import hu.gyulakiri.ripvessel.api.ContentV3Api
 import hu.gyulakiri.ripvessel.api.CreatorV3Api
 import hu.gyulakiri.ripvessel.api.DeliveryV3Api
@@ -53,5 +54,11 @@ object NetworkModule {
     @Singleton
     fun provideDeliveryV3Api(client: OkHttpClient): DeliveryV3Api {
         return DeliveryV3Api(client = client)
+    }
+
+    @Provides
+    @Singleton
+    fun provideCommentV3Api(client: OkHttpClient): CommentV3Api {
+        return CommentV3Api(client = client)
     }
 } 

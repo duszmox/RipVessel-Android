@@ -64,6 +64,7 @@ import hu.cock.ripvessel.video.components.VideoPlayer
 import dagger.hilt.android.AndroidEntryPoint
 import hu.gyulakiri.ripvessel.api.ContentV3Api
 import hu.gyulakiri.ripvessel.api.DeliveryV3Api
+import hu.gyulakiri.ripvessel.api.CommentV3Api
 import javax.inject.Inject
 import kotlin.jvm.java
 
@@ -74,6 +75,9 @@ class VideoActivity : ComponentActivity() {
 
     @Inject
     lateinit var deliveryApi: DeliveryV3Api
+
+    @Inject
+    lateinit var commentApi: CommentV3Api
 
     private val viewModel: VideoViewModel by viewModels {
         object : ViewModelProvider.Factory {
@@ -88,8 +92,9 @@ class VideoActivity : ComponentActivity() {
                     Application::class.java,
                     SavedStateHandle::class.java,
                     ContentV3Api::class.java,
-                    DeliveryV3Api::class.java
-                ).newInstance(application, savedStateHandle, contentApi, deliveryApi) as T
+                    DeliveryV3Api::class.java,
+                    CommentV3Api::class.java
+                ).newInstance(application, savedStateHandle, contentApi, deliveryApi, commentApi) as T
             }
         }
     }

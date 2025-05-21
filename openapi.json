@@ -3177,7 +3177,7 @@
 						}
 					},
 					"userInteraction": {
-						"$ref": "#/components/schemas/UserInteractionModel"
+						"type": "string"
 					}
 				},
 				"required": [
@@ -3193,8 +3193,7 @@
 					"likes",
 					"dislikes",
 					"score",
-					"interactionCounts",
-					"userInteraction"
+					"interactionCounts"
 				]
 			},
 			"UserNotificationModel": {
