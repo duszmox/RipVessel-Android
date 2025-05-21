@@ -99,12 +99,10 @@ class VideoActivity : ComponentActivity() {
     private var inPipMode by mutableStateOf(false)
     private var isFullScreen by mutableStateOf(false)
     private var suppressConfigChangeExit = false
-    private var showQualityDialog by mutableStateOf(false)
 
     @androidx.annotation.OptIn(UnstableApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val postId = intent.getStringExtra("postId") ?: return finish()
 
         // Check initial orientation and set fullscreen state
         isFullScreen = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -200,8 +198,6 @@ class VideoActivity : ComponentActivity() {
             WindowCompat.setDecorFitsSystemWindows(window, false)
             WindowInsetsControllerCompat(window, window.decorView)
                 .hide(WindowInsetsCompat.Type.systemBars())
-        } else {
-            finish()
         }
     }
 }
@@ -221,7 +217,6 @@ fun VideoScreen(
     val post by viewModel.post.collectAsState()
     val currentQuality by viewModel.currentQuality.collectAsState()
     val qualities by viewModel.qualities.collectAsState()
-    val playbackPosition by viewModel.playbackPosition.collectAsState()
 
     var showQualitySelector by remember { mutableStateOf(false) }
     var exoPlayer by remember { mutableStateOf<ExoPlayer?>(null) }
@@ -246,8 +241,8 @@ fun VideoScreen(
         currentQuality?.let { quality ->
             val oldPlayer = exoPlayer
             // Store current position and playing state before creating new player
-            val currentPosition = oldPlayer?.currentPosition ?: 0L
-            val wasPlaying = oldPlayer?.isPlaying ?: true
+            val currentPosition = oldPlayer?.currentPosition ?: viewModel.video.value?.progress?.times(1000)?.toLong() ?: 0L
+            val wasPlaying = oldPlayer?.isPlaying != false
 
             // Release old player first to prevent state conflicts
             oldPlayer?.release()
@@ -293,6 +288,7 @@ fun VideoScreen(
                             videoHeight = videoSize.height
                             onVideoSizeChanged(videoSize.width, videoSize.height)
                         }
+
                     })
                 }
 
@@ -376,7 +372,6 @@ fun VideoScreen(
         if (showQualitySelector) {
             QualitySelectionDialog(
                 qualities = qualities,
-//                currentQuality = currentQuality,
                 onQualitySelected = { quality ->
                     viewModel.setQuality(quality)
                     showQualitySelector = false
