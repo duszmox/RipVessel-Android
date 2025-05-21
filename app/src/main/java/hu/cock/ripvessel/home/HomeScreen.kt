@@ -10,11 +10,18 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -25,8 +32,17 @@ import hu.cock.ripvessel.ui.components.VideoListItem
 import hu.cock.ripvessel.ui.components.VideoListItemLoading
 import hu.cock.ripvessel.ui.theme.RIPVesselTheme
 import hu.cock.ripvessel.video.VideoActivity
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.layout.Column
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onNavigateToCreator: (String, String?) -> Unit
@@ -50,7 +66,8 @@ fun HomeScreen(
         }.collect { lastVisibleIndex ->
             if (lastVisibleIndex != null &&
                 lastVisibleIndex >= videoItems.size - 3 &&
-                !isLoading) {
+                !isLoading
+            ) {
                 viewModel.loadMoreVideos()
             }
         }
